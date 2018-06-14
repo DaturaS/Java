@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--                              ioc+di+注解+aop                 -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans 
+    http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context.xsd
+    http://www.springframework.org/schema/aop 
+    http://www.springframework.org/schema/aop/spring-aop.xsd
+    http://www.springframework.org/schema/tx 
+	http://www.springframework.org/schema/tx/spring-tx.xsd">
+<!--管理对象的产生与销毁，spring实现了控制反转与数据注入，从功能到对象资源，变为由对象资源到功能  -->
+<!-- property 对象数据的注入，value 值，ref 对象，3种集合的数据注入，通常资源类中的数据类型定义为string -->
+<!-- constructor-arg：通过构造函数注入。 property：通过setter对应的方法注入。 -->
+ 
+ <!-- ioc  控制反转    和    Di  依赖注入  以配置文件方式添加到spring -->
+  <bean id="demoSpring" class="com.clive.demo.impl.DemoImpl"></bean> 
+  
+  <bean id="bean" class="com.clive.bean.Bean">
+  <property name="name2" value="666"/>
+  <property name="age" value="36" />
+  <property name="time" value="33"/>
+  <property name="list">
+  <list>
+  <value>nishi</value>
+   <value>nishi</value>
+    <value>nishi</value>
+     <value>nishi</value>
+  </list>
+  </property>
+  <property name="set">
+  <set>
+  <value> haha</value>
+  <value> 6</value>
+  <value> haha2</value>
+  </set>
+  </property>
+  <property name="map">
+  <map>
+  <entry key="1" value="ha"   />
+  <entry key="2" value="2ha"   />
+  <entry key="3" value="3ha"   />
+  <entry key="4" value="4ha"   />
+  </map>
+  </property>
+  <constructor-arg value="构造方法注入数值实现了"></constructor-arg>
+  </bean>
+  <!--Ioc 和Di 开启注解  	base-package:基础包===>给我一个包名，我去找这个包下面的所有类，只要这个类上面有spring的注解
+  	我就根据注解去找spring的解释，@Component(value="userService") spring规定是
+  	他用来替代bean标签。 可以 com.clive.service以他 为开始 com.clive.service.xxx。xxxx都行
+  	开启组件扫描： -->
+  <context:component-scan base-package="demo2"></context:component-scan>
+  <context:component-scan base-package="demo3"></context:component-scan>
+  <context:component-scan base-package="MyAspectJ"></context:component-scan>
+  <context:component-scan base-package="com.clive.bean"></context:component-scan>
+ <!-- aop  面向切面 ，动态代理   配置文件实现添加到spring -->
+  <aop:config>
+  <aop:aspect ref="myAspectJ">
+  <!-- 前置 后置最终通告    切面=切入点（具体方法）+通知-->
+  <aop:before method="startLog" pointcut="execution(void demo3.impl.Demo3Impl.demoAop() )"/>
+  <aop:after-returning method="commitLog" pointcut="execution(* *..*.demo*() )"/>
+  <!-- 环绕通告 -->
+  <aop:around method="around" pointcut="execution(* *..*.*Impl.demo*(..))" />
+  </aop:aspect>
+  </aop:config>
+  <!--   开启                                                                                       aop         注解 -->
+   <aop:aspectj-autoproxy></aop:aspectj-autoproxy>
+   
+   
+   
+   <context:component-scan base-package="com.clive"></context:component-scan>
+   
+   <!-- 配置连接池对象数据   CTRL+shift+t 快捷查询包
+                     第三方的东西写配置文件， service 和 dao写注解-->
+                     <!-- 没有基础 -->
+   <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+   <property name="driverClassName" value="com.mysql.jdbc.Driver"></property>
+   <property name="url" value="jdbc:mysql://localhost:3306/web"/>
+   <property name="username" value="root"/>
+   <property name="password" value="0305rt"/>
+    </bean>
+    <!--                               数据库       操作对象添加                                   -->
+    <!-- 方法一给 JdbcTemplate的dataSource属性赋值，然后获取spring里面存入的jdbcTemplate对象-->
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+    <property name="dataSource" ref="dataSource"/>
+	</bean>
+	<!-- 方法2 常用：给DemoDaoImpl中继承JdbcDaoSupport，直接为dataSource属性 然后赋值，可以直接调用方法获取到jdbcTemplate对象-->
+	<bean id="demoDaoImpl" class="com.clive.day13dao.impl.DemoDaoImpl">
+	<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	<!--                                获取事务管理器 -->
+	<bean id="dataSourceTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+	          <!-- 配置连接池属性 -->
+	<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	
+	<!--                  设置事务管理器，配置加强方法 -->
+	<!--配置文件设置事务管理：切面绑定方法（切入点）  给切面设置 事务管理器  transaction-manager   ，-->
+	<tx:advice id="myAdvice" transaction-manager="dataSourceTransactionManager">
+	<tx:attributes>
+	    <!--  
+	    name     指定方法
+	    isolation  默认（不设置也有） 定义隔离级别   默认为4 不能防止虚读
+	    propagation 默认 （不设置也有）   定义传播行为 
+	                            
+	     -->
+	    
+	<tx:method name="updateDemo1" isolation="DEFAULT" propagation="REQUIRED"/>
+    </tx:attributes>
+	</tx:advice>
+	
+	 <!-- 把配置好的事务管理切面绑定到方法上 -->
+	<!-- 事务管理器属于aop  
+	    <aop:aspect>他针对的是我们自己写的aop切面
+	    <aop:advisor> 他针对的是 系统内置的aop切面
+	-->
+	<aop:config>
+	<aop:advisor advice-ref="myAdvice" pointcut="execution(* *..*.updateDemo1())"/>
+	</aop:config>
+	
+	<!-- 1切面绑定到方法上
+	     2.为切面设置事务管理 指定方法的隔离级别，传播方式，
+	     3.为事务管理器设置连接池属性
+	 -->
+	<!--                          获取事务管理器  并 开启 事务注解           且名称必须是默认名称  transactionManager（特例）      -->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+	          <!-- 配置连接池属性 -->
+	<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	
+	<tx:annotation-driven/>
+</beans>
